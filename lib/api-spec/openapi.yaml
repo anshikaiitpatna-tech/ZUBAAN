@@ -1,0 +1,327 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Zubaan Living Heritage archive API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: archive
+    description: Living heritage archive content
+  - name: recordings
+    description: Artisan recordings
+  - name: learning
+    description: Direct artisan-to-learner requests
+  - name: lineage
+    description: Tradition lineage and learner continuations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /capsules:
+    get:
+      operationId: listCapsules
+      tags: [archive]
+      summary: List heritage capsules
+      parameters:
+        - in: query
+          name: craft
+          schema:
+            type: string
+        - in: query
+          name: dialect
+          schema:
+            type: string
+        - in: query
+          name: region
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Heritage capsules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Capsule"
+  /capsules/featured:
+    get:
+      operationId: getFeaturedCapsules
+      tags: [archive]
+      summary: Get featured heritage capsules
+      responses:
+        "200":
+          description: Featured capsules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Capsule"
+  /capsules/{id}:
+    get:
+      operationId: getCapsule
+      tags: [archive]
+      summary: Get one heritage capsule
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Heritage capsule
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Capsule"
+        "404":
+          description: Capsule not found
+  /artisans:
+    get:
+      operationId: listArtisans
+      tags: [archive]
+      summary: List artisans
+      responses:
+        "200":
+          description: Artisans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Artisan"
+  /lineage/{id}:
+    get:
+      operationId: getLineage
+      tags: [lineage]
+      summary: Get a tradition lineage
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Tradition lineage
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lineage"
+        "404":
+          description: Lineage not found
+  /recordings:
+    post:
+      operationId: createRecording
+      tags: [recordings]
+      summary: Save a new artisan recording
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordingInput"
+      responses:
+        "201":
+          description: Saved recording
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Recording"
+  /learning-request:
+    post:
+      operationId: createLearningRequest
+      tags: [learning]
+      summary: Send a request to learn from an artisan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LearningRequestInput"
+      responses:
+        "201":
+          description: Learning request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LearningRequest"
+  /lineage-response:
+    post:
+      operationId: createLineageResponse
+      tags: [lineage]
+      summary: Submit a learner continuation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LineageResponseInput"
+      responses:
+        "201":
+          description: Learner continuation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LineageResponse"
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    Artisan:
+      type: object
+      required: [id, name, village, region, craft, dialect, initials, palette]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        village: { type: string }
+        region: { type: string }
+        craft: { type: string }
+        dialect: { type: string }
+        initials: { type: string }
+        palette: { type: string }
+        story: { type: string }
+    TranscriptLine:
+      type: object
+      required: [id, start, end, original, bridge]
+      properties:
+        id: { type: string }
+        start: { type: number }
+        end: { type: number }
+        original: { type: string }
+        bridge: { type: string }
+    Capsule:
+      type: object
+      required:
+        [id, artisan, title, description, craft, dialect, village, region, duration, date, lineage, transcript]
+      properties:
+        id: { type: string }
+        artisan: { $ref: "#/components/schemas/Artisan" }
+        title: { type: string }
+        description: { type: string }
+        craft: { type: string }
+        dialect: { type: string }
+        village: { type: string }
+        region: { type: string }
+        duration: { type: string }
+        date: { type: string }
+        lineage:
+          type: string
+          enum: [ORIGINAL MASTER, COMMUNITY CONTINUATION]
+        transcript:
+          type: array
+          items: { $ref: "#/components/schemas/TranscriptLine" }
+        audioUrl: { type: string }
+        parentId: { type: ["string", "null"] }
+    LineageNode:
+      type: object
+      required: [id, name, location, title, type, x, y]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        location: { type: string }
+        title: { type: string }
+        type:
+          type: string
+          enum: [root, continuation]
+        x: { type: number }
+        y: { type: number }
+        capsuleId: { type: string }
+    Lineage:
+      type: object
+      required: [id, title, root, nodes]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        root: { $ref: "#/components/schemas/LineageNode" }
+        nodes:
+          type: array
+          items: { $ref: "#/components/schemas/LineageNode" }
+    RecordingInput:
+      type: object
+      required: [title, duration]
+      properties:
+        title: { type: string, minLength: 1 }
+        duration: { type: string }
+        artisanName: { type: string }
+        craft: { type: string }
+        dialect: { type: string }
+        audioData: { type: ["string", "null"] }
+    Recording:
+      type: object
+      required: [id, title, duration, status, createdAt]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        duration: { type: string }
+        status: { type: string, enum: [saved, queued, uploaded] }
+        createdAt: { type: string }
+    LearningRequestInput:
+      type: object
+      required: [capsuleId, topic, date, time, mode, learnerName]
+      properties:
+        capsuleId: { type: string }
+        topic: { type: string, minLength: 1 }
+        date: { type: string }
+        time: { type: string }
+        mode:
+          type: string
+          enum: [In person, Voice call, Video call]
+        learnerName: { type: string }
+    LearningRequest:
+      type: object
+      required: [id, capsuleId, topic, date, time, mode, learnerName, status, voicePreview]
+      properties:
+        id: { type: string }
+        capsuleId: { type: string }
+        topic: { type: string }
+        date: { type: string }
+        time: { type: string }
+        mode: { type: string }
+        learnerName: { type: string }
+        status: { type: string, enum: [pending, accepted, declined] }
+        voicePreview: { type: string }
+    LineageResponseInput:
+      type: object
+      required: [parentId, title, description, learnerName, location]
+      properties:
+        parentId: { type: string }
+        title: { type: string, minLength: 1 }
+        description: { type: string, minLength: 1 }
+        learnerName: { type: string }
+        location: { type: string }
+        audioData: { type: ["string", "null"] }
+    LineageResponse:
+      type: object
+      required: [id, parentId, title, description, learnerName, location, createdAt]
+      properties:
+        id: { type: string }
+        parentId: { type: string }
+        title: { type: string }
+        description: { type: string }
+        learnerName: { type: string }
+        location: { type: string }
+        createdAt: { type: string }
+

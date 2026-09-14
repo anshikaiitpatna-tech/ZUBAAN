@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Zubaan — Living Heritage"
+description = "A warm oral-history archive that preserves Indian craft traditions through artisan voices, accessible learning, and living lineage."
+version = "1.0.0"
+id = "artifacts/zubaan"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24829
+
+[services.development]
+run = "pnpm --filter @workspace/zubaan run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/zubaan", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/zubaan/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24829"
+BASE_PATH = "/"
